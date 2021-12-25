@@ -1,5 +1,6 @@
 import minimalmodbus
 import pandas
+from pathlib import Path
 
 # [1] Programming Guide ModBus & SCPI For USB, GPIB, Ethernet and AnyBus modules, Programming_ModBus_SCPI_KE220_REV15_EN.pdf.
 
@@ -31,7 +32,7 @@ class ElectroAutomatikGmbHPowerSupply:
 			# ~ debug = True,
 			allow_broadcast_address = True,
 		)
-		self.register_list_df = pandas.read_csv('register_list.csv').set_index('description')
+		self.register_list_df = pandas.read_csv((Path(__file__).parent/Path('register_list.csv')).resolve()).set_index('description')
 		self.remote_mode(True)
 
 	def read(self, description: str):
