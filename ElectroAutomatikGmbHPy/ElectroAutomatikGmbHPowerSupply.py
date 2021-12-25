@@ -35,7 +35,7 @@ class ElectroAutomatikGmbHPowerSupply:
 		self.remote_mode(True)
 
 	def read(self, description: str):
-		"""Read data from the device."""
+		"""Read data from the device using the standard ModBus functions."""
 		if description not in self.register_list_df.index:
 			raise ValueError(f'{repr(description)} not found in the available registers. Available options are: {sorted(self.register_list_df.index)}.')
 		data_type = self.register_list_df.loc[description, 'data type']
@@ -60,7 +60,7 @@ class ElectroAutomatikGmbHPowerSupply:
 			raise NotImplementedError(f'Not implemented read data of type {repr(data_type)}.')
 	
 	def write(self, description: str, data):
-		"""Write data to the device."""
+		"""Write data to the device using the standard ModBus functions."""
 		if description not in self.register_list_df.index:
 			raise ValueError(f'{repr(description)} not found in the available registers. Available options are: {sorted(self.register_list_df.index)}.')
 		data_type = self.register_list_df.loc[description, 'data type']
@@ -76,7 +76,7 @@ class ElectroAutomatikGmbHPowerSupply:
 			raise NotImplementedError(f'Not implemented read data of type {repr(data_type)}.')
 	
 	def write_single_coil(self, register_address: int, value: bool):
-		"""Write 0x0000 (False) or 0xff00 (True) to a single coil."""
+		"""Write 0x0000 (False) or 0xff00 (True) to a single coil which is something not in the ModBus standard, see documentation from Electro Automatik programming."""
 		# See [1] § 4.8.3, unfortunately these guys are out of the ModBus standard so this cannot be done with minimalmodbus package.
 		if value not in {True, False}:
 			raise ValueError(f'`value` must be either True or False.')
@@ -95,6 +95,15 @@ class ElectroAutomatikGmbHPowerSupply:
 			raise ValueError(f'`enable` must be True or False.')
 		self.write_single_coil(
 			register_address = int(self.register_list_df.loc['remote mode', 'modbus address']),
+			value = enable,
+		)
+	
+	def enable_output(self, enable: bool):
+		"""Enable or disable the DC output."""
+		if enable not in {True, False}:
+			raise ValueError(f'`enable` must be True or False.')
+		self.write_single_coil(
+			register_address = int(self.register_list_df.loc['dc output', 'modbus address']),
 			value = enable,
 		)
 	
@@ -159,8 +168,15 @@ class ElectroAutomatikGmbHPowerSupply:
 	def is_remote(self):
 		"""Returns True if remote control is enabled, false otherwise."""
 		return True if (self.read('device state') & 1<<11) != 0 else False
+	
+	@property
+	def output(self):
+		"""Return 'on' or 'off' depending on the status of the DC output."""
+		return 'on' if (self.read('device state') & 1<<7) != 0 else 'off'
 
 if __name__ == '__main__':
+	import time
+	
 	ps = ElectroAutomatikGmbHPowerSupply('/dev/ttyACM3')
 	
 	print(ps.register_list_df)
@@ -179,4 +195,12 @@ if __name__ == '__main__':
 	ps.set_voltage_value = voltage
 	ps.set_current_value = current
 	print(f'Set voltage is {ps.set_voltage_value:.2f} V and set current is {ps.set_current_value:.2f} A.')
-	
+	print(f'Measured voltage and current is: {ps.measured_voltage:.2f} V, {ps.measured_current:.2f} A, output is {ps.output}.')
+	input(f'Press enter to turn the output on...')
+	ps.enable_output(True)
+	time.sleep(1)
+	print(f'Measured voltage and current is: {ps.measured_voltage:.2f} V, {ps.measured_current:.2f} A, output is {ps.output}.')
+	print(f'Turning output off...')
+	ps.enable_output(False)
+	time.sleep(1)
+	print(f'Measured voltage and current is: {ps.measured_voltage:.2f} V, {ps.measured_current:.2f} A, output is {ps.output}.')
