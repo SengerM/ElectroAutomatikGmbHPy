@@ -1,0 +1,22 @@
+"modbus address","description","access","data type","data length in bytes"
+0,"device class","r","uint16",2
+1,"device type","r","char",40
+21,"manufacturer","r","char",40
+121,"nominal voltage","r","float",4
+123,"nominal current","r","float",4
+125,"nominal power","r","float",4
+151,"serial number","r","char",40
+171,"user text","rw","char",40
+191,"firmware version (KE)","r","char",40
+211,"firmware version (HMI)","r","char",40
+231,"firmware version (DR)","r","char",40
+402,"remote mode","rw","uint16",2
+405,"dc output","rw","uint16",2
+408,"condition of the dc output after powering the device","rw","uint16",2
+500,"set voltage value","rw","uint16",2
+501,"set current value","rw","uint16",2
+502,"set power value","rw","uint16",2
+505,"device state","r","uint32",4
+507,"actual voltage","r","uint16",2
+508,"actual current","r","uint16",2
+509,"actual power","r","uint16",2
