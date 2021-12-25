@@ -75,17 +75,28 @@ class ElectroAutomatikGmbHPowerSupply:
 		else:
 			raise NotImplementedError(f'Not implemented read data of type {repr(data_type)}.')
 	
-	def remote_mode(self, enable: bool):
-		"""Enable remote control."""
+	def write_single_coil(self, register_address: int, value: bool):
+		"""Write 0x0000 (False) or 0xff00 (True) to a single coil."""
 		# See [1] § 4.8.3, unfortunately these guys are out of the ModBus standard so this cannot be done with minimalmodbus package.
-		if enable not in {True, False}:
-			raise ValueError(f'`enable` must be True or False.')
+		if value not in {True, False}:
+			raise ValueError(f'`value` must be either True or False.')
+		if not isinstance(register_address, int) or not 0 <= register_address < 2**16:
+			raise ValueError(f'`register_address` must be an integer number between 0 and 2**16, received {repr(register_address)} of type {type(register_address)}.')
 		packet = create_modbus_packet(
-			function = 5,
-			register_address = int(self.register_list_df.loc['remote mode', 'modbus address']),
-			data = [0xff,0x00] if enable==True else [0x00,0x00],
+			function = 5, # [1] § 4.8.4.
+			register_address = register_address,
+			data = [0xff,0x00] if value==True else [0x00,0x00],
 		)
 		self.power_supply.serial.write(packet)
+	
+	def remote_mode(self, enable: bool):
+		"""Enable or disable remote control."""
+		if enable not in {True, False}:
+			raise ValueError(f'`enable` must be True or False.')
+		self.write_single_coil(
+			register_address = int(self.register_list_df.loc['remote mode', 'modbus address']),
+			value = enable,
+		)
 	
 	@property
 	def idn(self):
@@ -151,6 +162,9 @@ class ElectroAutomatikGmbHPowerSupply:
 
 if __name__ == '__main__':
 	ps = ElectroAutomatikGmbHPowerSupply('/dev/ttyACM3')
+	
+	print(ps.register_list_df)
+	
 	print(f'Connected with {ps.idn}')
 	print(f'Is remote control enabled? {ps.is_remote}')
 	print(f'Switching to manual mode...')
