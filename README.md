@@ -20,6 +20,7 @@ from ElectroAutomatikGmbHPy.ElectroAutomatikGmbHPowerSupply import ElectroAutoma
 import time
 	
 ps = ElectroAutomatikGmbHPowerSupply(port='/dev/ttyACM3') # https://unix.stackexchange.com/a/144735/317682
+# Check also the function find_elektro_automatik_devices defined in the __init__.py file to automatize the port-finding.
 
 ps.enable_output(False) # Switch off the output.
 time.sleep(1) # Wait for transients.
